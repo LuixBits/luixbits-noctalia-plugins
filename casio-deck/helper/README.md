@@ -28,6 +28,18 @@ From the repository root:
 ./scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
 ```
 
+The wrapper tries these runtimes in order:
+
+1. `uv run --project casio-deck/helper ...`
+2. a local `casio-deck/helper/.venv` created with `python3 -m venv`
+3. `nix shell nixpkgs#uv nixpkgs#bluez` as a Nix/NixOS fallback
+
+For a normal non-Nix clone, install Python 3.12+ with venv support and BlueZ
+with `bluetoothctl` available. The first run may download Python packages into
+the local ignored `.venv`. Set `CASIO_DECK_HELPER_VENV` to keep that environment
+elsewhere. The bundled Noctalia launcher sets it to the writable plugin data
+directory automatically.
+
 Use listener mode from Noctalia once pairing/setup is done:
 
 ```sh
@@ -173,7 +185,7 @@ hardware rejected `1F00` with `ff811f`.
 Expected stdout lines look like:
 
 ```text
-ready casio-deck-helper 0.1.0 casio_abl100we_3565
+ready casio-deck-helper 0.1.1 casio_abl100we_3565
 model casio_abl100we_3565 Casio_ABL-100WE-1A module=3565 support=experimental
 capabilities casio_abl100we_3565 lower_left,lower_right,finder
 state waiting

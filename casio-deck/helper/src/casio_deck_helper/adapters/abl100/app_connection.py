@@ -19,6 +19,13 @@ from ...protocol import await_library, emit, emit_state, emit_trace, log, safe_f
 from .device import watch_name_filter
 
 
+async def scan_for_watch(scanner: Any, watch_filter: Any, timeout: float) -> Any:
+    return await asyncio.wait_for(
+        await_library(scanner.scan(watch_filter=watch_filter)),
+        timeout=max(timeout, 0.01),
+    )
+
+
 async def connect_watch(args: argparse.Namespace, model: CasioModelAdapter) -> tuple[Any, Any] | None:
     try:
         from gshock_api.connection import Connection
@@ -127,7 +134,11 @@ async def connect_app_watch(args: argparse.Namespace, model: CasioModelAdapter) 
 
     if connection.address is None:
         emit_trace("scan_start", f"model={model.id}")
-        device = await await_library(scanner.scan(watch_filter=watch_name_filter(args)))
+        try:
+            device = await scan_for_watch(scanner, watch_name_filter(args), args.scan_timeout)
+        except TimeoutError:
+            emit_trace("scan_result", "timeout")
+            return None
         if device is None:
             emit_trace("scan_result", "not_found")
             return None

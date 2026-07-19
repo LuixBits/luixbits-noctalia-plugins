@@ -9,7 +9,7 @@ from .models import cli_model_choices, emit_model_lines, get_model
 from .protocol import configure_file_logging, emit, emit_state, log
 from .runtime import get_runtime
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

@@ -11,6 +11,10 @@ local function trim(value)
   return trimmed
 end
 
+local function shellQuote(value)
+  return "'" .. string.gsub(tostring(value or ""), "'", "'\\''") .. "'"
+end
+
 local function configString(key)
   local value = noctalia.getConfig(key)
   if type(value) ~= "string" then
@@ -167,13 +171,139 @@ local function readActionsData(path)
   return data
 end
 
+local function bundledHelperScript(name)
+  if type(noctalia.pluginDir) ~= "function" then
+    return ""
+  end
+  return noctalia.pluginDir() .. "/../../bin/" .. name
+end
+
+local function bundledDataDir()
+  if type(noctalia.pluginDataDir) ~= "function" then
+    return ""
+  end
+
+  local dataDir = trim(noctalia.pluginDataDir())
+  return dataDir
+end
+
+local function bundledEnvironmentPrefix()
+  local environment = {}
+
+  if type(noctalia.getenv) == "function" then
+    local path = trim(noctalia.getenv("PATH"))
+    if path ~= "" then
+      table.insert(environment, "PATH=" .. shellQuote(path))
+    end
+  end
+
+  local dataDir = bundledDataDir()
+  if dataDir ~= "" then
+    table.insert(environment, "CASIO_DECK_HELPER_VENV=" .. shellQuote(dataDir .. "/helper-venv"))
+  end
+
+  if #environment == 0 then
+    return ""
+  end
+  return table.concat(environment, " ") .. " "
+end
+
+local function bundledLogArgument()
+  local dataDir = bundledDataDir()
+  if dataDir == "" then
+    return " --log-file ''"
+  end
+  return " --log-file " .. shellQuote(dataDir .. "/helper.log")
+end
+
+local function bundledStderrRedirect()
+  local dataDir = bundledDataDir()
+  if dataDir == "" then
+    return ""
+  end
+  return " 2>>" .. shellQuote(dataDir .. "/helper.stderr.log")
+end
+
+local function bundledHelperCommand()
+  local script = bundledHelperScript("run-abl100-helper.sh")
+  if script == "" then
+    return ""
+  end
+  return bundledEnvironmentPrefix()
+    .. shellQuote(script)
+    .. " --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2"
+    .. bundledLogArgument()
+    .. bundledStderrRedirect()
+end
+
+local function bundledPairCommand()
+  local script = bundledHelperScript("run-abl100-helper.sh")
+  if script == "" then
+    return ""
+  end
+  return bundledEnvironmentPrefix()
+    .. shellQuote(script)
+    .. " --model abl100we --setup-pairing --app-info-profile smart-sync --sync-time-on-connect --once --debug --scan-timeout 90 --connect-timeout 25 --app-init-timeout 25"
+    .. bundledLogArgument()
+    .. bundledStderrRedirect()
+end
+
+local function bundledStopCommand()
+  local script = bundledHelperScript("stop-abl100-helper.sh")
+  if script == "" then
+    return ""
+  end
+  return bundledEnvironmentPrefix() .. shellQuote(script)
+end
+
+local function commandExecutablePath(command)
+  local text = trim(command)
+  local singleQuoted = string.match(text, "^'([^']+)'%s*")
+  if singleQuoted ~= nil then
+    return singleQuoted
+  end
+
+  local doubleQuoted = string.match(text, '^"([^"]+)"%s*')
+  if doubleQuoted ~= nil then
+    return doubleQuoted
+  end
+
+  return string.match(text, "^([^%s]+)") or ""
+end
+
+local function needsBundledCommand(command)
+  if command == "" then
+    return true
+  end
+  if type(noctalia.fileExists) ~= "function" then
+    return false
+  end
+
+  local executable = commandExecutablePath(command)
+  if string.sub(executable, 1, 1) ~= "/" then
+    return false
+  end
+  return not noctalia.fileExists(executable)
+end
+
 local helperCommand = configString("helper_command")
+if needsBundledCommand(helperCommand) then
+  helperCommand = bundledHelperCommand()
+end
+
 local stopCommand = configString("stop_command")
+if needsBundledCommand(stopCommand) then
+  stopCommand = bundledStopCommand()
+end
+
 local pairCommand = configString("pair_command")
+if needsBundledCommand(pairCommand) then
+  pairCommand = bundledPairCommand()
+end
 local autostartHelper = configBool("autostart_helper", false)
 local savedWatchName = configString("saved_watch_name")
 local savedWatchAddress = configString("saved_watch_address")
-local githubUrl = "https://github.com/devluixos/luixbits-noctalia-plugins"
+local githubUrl = "https://github.com/LuixBits/luixbits-noctalia-plugins"
 local youtubeUrl = configSelect("youtube_channel_url", "https://www.youtube.com/@LuixBits")
 local videoUrl = configString("explanation_video_url")
 
@@ -402,6 +532,15 @@ local actionMap = parseActionMap(configString("trigger_action_map"))
 local triggerCounts = {}
 local connectionLog = {}
 local helperStarted = false
+local helperGeneration = 0
+local activeHelperGeneration = 0
+local helperStoppingForPair = false
+local pairSetupPending = false
+local pairSetupRunning = false
+local restartHelperAfterPair = false
+local pairSetupSource = "pair"
+local finishPairSetup
+local finishHelperProcess
 
 local selectedModel = modelForId(selectedModelId)
 
@@ -744,10 +883,6 @@ local function runCommand(command, trigger, source)
   return true
 end
 
-local function shellQuote(value)
-  return "'" .. string.gsub(tostring(value or ""), "'", "'\\''") .. "'"
-end
-
 local function safeHttpsUrl(url)
   local text = trim(url)
   if string.match(text, "^https://[^%s]+$") then
@@ -1024,15 +1159,40 @@ local function handleHelperLine(line)
     recordRaw(payload)
   elseif action == "error" then
     recordError(payload ~= "" and payload or "helper reported an error", "helper")
+  elseif action == "helper_process_exit" then
+    local generationText, exitCodeText = string.match(payload, "^(%d+)%s+(-?%d+)$")
+    if finishHelperProcess ~= nil and generationText ~= nil and exitCodeText ~= nil then
+      finishHelperProcess(tonumber(generationText), tonumber(exitCodeText))
+    end
+  elseif action == "pair_process_exit" then
+    local exitCode = tonumber(payload)
+    if finishPairSetup ~= nil then
+      finishPairSetup(exitCode or 1)
+    end
   else
     recordError(`invalid helper line: {text}`, "helper")
   end
 end
 
 -- Helper process and runtime commands.
+local function helperStreamCommand(generation)
+  return helperCommand
+    .. "\ncasio_deck_helper_status=$?"
+    .. `\nprintf 'helper_process_exit {generation} %s\\n' "$casio_deck_helper_status"`
+end
+
 local function startHelper(source)
   if helperCommand == "" then
     recordError("helper_command is empty; configure a helper command first", source or "helper")
+    return
+  end
+
+  if pairSetupPending or pairSetupRunning then
+    status.last_source = source or "helper"
+    status.last_action = "helper_blocked_by_pairing"
+    status.last_action_detail = "Pair/Setup is in progress"
+    status.updated_at = noctalia.formatTime("%H:%M:%S")
+    publish()
     return
   end
 
@@ -1046,22 +1206,77 @@ local function startHelper(source)
   end
 
   helperStarted = true
+  helperGeneration = helperGeneration + 1
+  activeHelperGeneration = helperGeneration
+  local generation = activeHelperGeneration
   status.helper_configured = true
   status.connection_state = "starting"
   status.last_source = source or "helper"
   status.last_action = "start_helper"
   status.last_action_detail = helperCommand
+  status.last_error = ""
   status.updated_at = noctalia.formatTime("%H:%M:%S")
   publish()
 
-  local ok, err = pcall(function()
-    noctalia.runStream(helperCommand, handleHelperLine)
+  local ok, acceptedOrError = pcall(function()
+    return noctalia.runStream(helperStreamCommand(generation), handleHelperLine)
   end)
 
-  if not ok then
-    helperStarted = false
-    recordError(`failed to start helper: {tostring(err)}`, source or "helper")
+  if not ok or acceptedOrError ~= true then
+    if activeHelperGeneration == generation then
+      helperStarted = false
+      activeHelperGeneration = 0
+    end
+    local detail = ok and "runtime rejected the stream" or tostring(acceptedOrError)
+    recordError(`failed to start helper: {detail}`, source or "helper")
   end
+end
+
+local function markHelperStopped(source, detail)
+  helperStarted = false
+  activeHelperGeneration = 0
+  helperStoppingForPair = false
+  status.connected = false
+  status.helper_ready = false
+  status.connection_state = "stopped"
+  status.last_source = source or "helper"
+  status.last_action = "stop_helper"
+  status.last_action_detail = detail or "listener stopped"
+  status.updated_at = noctalia.formatTime("%H:%M:%S")
+  publish()
+end
+
+finishHelperProcess = function(generation, exitCode)
+  if generation ~= activeHelperGeneration then
+    return
+  end
+
+  helperStarted = false
+  activeHelperGeneration = 0
+
+  if helperStoppingForPair or pairSetupPending then
+    helperStoppingForPair = false
+    status.connected = false
+    status.helper_ready = false
+    status.connection_state = "stopped_for_pair"
+    status.last_source = pairSetupSource
+    status.last_action = "helper_stopped_for_pair"
+    status.last_action_detail = `listener exited with code {exitCode}`
+    status.updated_at = noctalia.formatTime("%H:%M:%S")
+    publish()
+    return
+  end
+
+  if pairSetupRunning then
+    return
+  end
+
+  if status.connection_state == "stopping" or exitCode == 0 then
+    markHelperStopped("helper", `listener exited with code {exitCode}`)
+    return
+  end
+
+  recordError(`helper stream exited with code {exitCode}`, "helper")
 end
 
 local function stopHelper(source)
@@ -1083,24 +1298,86 @@ local function stopHelper(source)
   status.updated_at = noctalia.formatTime("%H:%M:%S")
   publish()
 
-  local ok, err = pcall(function()
-    noctalia.runAsync(stopCommand)
+  local ok, acceptedOrError = pcall(function()
+    return noctalia.runAsync(stopCommand, function(result)
+      if result.timedOut == true or result.exitCode ~= 0 then
+        local reason = result.timedOut == true and "timed out" or `exited with code {tostring(result.exitCode)}`
+        recordError(`failed to stop helper: {reason}`, source or "helper")
+        return
+      end
+      markHelperStopped(source, "listener stopped")
+    end)
   end)
 
-  if not ok then
-    recordError(`failed to stop helper: {tostring(err)}`, source or "helper")
+  if not ok or acceptedOrError ~= true then
+    local detail = ok and "runtime rejected the command" or tostring(acceptedOrError)
+    recordError(`failed to stop helper: {detail}`, source or "helper")
     return
   end
+end
 
-  helperStarted = false
-  status.connected = false
-  status.helper_ready = false
-  status.connection_state = "stopped"
-  status.last_source = source or "helper"
-  status.last_action = "stop_helper"
-  status.last_action_detail = "listener stop requested"
+local function pairStreamCommand()
+  return pairCommand
+    .. "\ncasio_deck_pair_status=$?"
+    .. "\nprintf 'pair_process_exit %s\\n' \"$casio_deck_pair_status\""
+end
+
+finishPairSetup = function(exitCode)
+  pairSetupPending = false
+  pairSetupRunning = false
+
+  local shouldRestart = restartHelperAfterPair
+  restartHelperAfterPair = false
+  helperStoppingForPair = false
+
+  if exitCode == 0 then
+    status.connected = false
+    status.connection_state = "pairing_complete"
+    status.last_source = pairSetupSource
+    status.last_action = "pair_finished"
+    status.last_action_detail = "Pair/Setup completed"
+    status.last_error = ""
+    status.updated_at = noctalia.formatTime("%H:%M:%S")
+    publish()
+  end
+
+  if shouldRestart then
+    startHelper("pair-resume")
+  end
+
+  if exitCode ~= 0 then
+    recordError(`Pair/Setup exited with code {exitCode}`, pairSetupSource)
+  end
+end
+
+local function startPairStream(source)
+  pairSetupPending = false
+  pairSetupRunning = true
+  pairSetupSource = source or "pair"
+
+  status.last_source = pairSetupSource
+  status.last_action = "pair_started"
+  status.last_action_detail = pairCommand
+  status.last_error = ""
+  status.connection_state = "setup_pairing"
   status.updated_at = noctalia.formatTime("%H:%M:%S")
   publish()
+
+  local ok, acceptedOrError = pcall(function()
+    return noctalia.runStream(pairStreamCommand(), handleHelperLine)
+  end)
+
+  if not ok or acceptedOrError ~= true then
+    local detail = ok and "runtime rejected the stream" or tostring(acceptedOrError)
+    pairSetupRunning = false
+
+    local shouldRestart = restartHelperAfterPair
+    restartHelperAfterPair = false
+    if shouldRestart then
+      startHelper("pair-resume")
+    end
+    recordError(`failed to start pair command: {detail}`, pairSetupSource)
+  end
 end
 
 local function startPairSetup(source)
@@ -1113,24 +1390,61 @@ local function startPairSetup(source)
     return
   end
 
-  if helperStarted then
-    recordError("cannot run Pair/Setup while the helper stream is running; reload the plugin first", source or "pair")
+  if pairSetupPending or pairSetupRunning then
+    status.last_source = source or "pair"
+    status.last_action = "pair_already_running"
+    status.last_action_detail = "Pair/Setup is already in progress"
+    status.updated_at = noctalia.formatTime("%H:%M:%S")
+    publish()
     return
   end
 
-  status.last_source = source or "pair"
-  status.last_action = "pair_started"
-  status.last_action_detail = pairCommand
-  status.connection_state = "setup_pairing"
+  restartHelperAfterPair = helperStarted
+  pairSetupSource = source or "pair"
+
+  if not helperStarted then
+    startPairStream(pairSetupSource)
+    return
+  end
+
+  if stopCommand == "" then
+    restartHelperAfterPair = false
+    recordError("cannot stop the listener for Pair/Setup because stop_command is empty", pairSetupSource)
+    return
+  end
+
+  pairSetupPending = true
+  helperStoppingForPair = true
+  status.connection_state = "stopping_for_pair"
+  status.last_source = pairSetupSource
+  status.last_action = "pair_stopping_listener"
+  status.last_action_detail = stopCommand
+  status.last_error = ""
   status.updated_at = noctalia.formatTime("%H:%M:%S")
   publish()
 
-  local ok, err = pcall(function()
-    noctalia.runStream(pairCommand, handleHelperLine)
+  local ok, acceptedOrError = pcall(function()
+    return noctalia.runAsync(stopCommand, function(result)
+      if result.timedOut == true or result.exitCode ~= 0 then
+        pairSetupPending = false
+        restartHelperAfterPair = false
+        helperStoppingForPair = false
+        local reason = result.timedOut == true and "timed out" or `exited with code {tostring(result.exitCode)}`
+        recordError(`failed to stop listener for Pair/Setup: {reason}`, pairSetupSource)
+        return
+      end
+
+      markHelperStopped(pairSetupSource, "listener stopped for Pair/Setup")
+      startPairStream(pairSetupSource)
+    end)
   end)
 
-  if not ok then
-    recordError(`failed to start pair command: {tostring(err)}`, source or "pair")
+  if not ok or acceptedOrError ~= true then
+    pairSetupPending = false
+    restartHelperAfterPair = false
+    helperStoppingForPair = false
+    local detail = ok and "runtime rejected the command" or tostring(acceptedOrError)
+    recordError(`failed to stop listener for Pair/Setup: {detail}`, pairSetupSource)
   end
 end
 

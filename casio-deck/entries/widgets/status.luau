@@ -1,16 +1,16 @@
 -- Casio Deck bar widget.
 --
 -- Left click is reserved for the future plugin dropdown panel. Noctalia v5's
--- Luau plugin API does not currently expose plugin-owned bar panels.
+-- Casio Deck 0.1.1 uses the desktop widget for setup; a panel can be added later.
 -- Right click reports the current bridge status. Middle click sends the first
 -- trigger for quick local testing.
 -- IPC can also target this widget and will forward commands to the bridge
 -- service through noctalia.state.
 
-local label = barWidget.getConfig("label") or "Casio"
-local showLabel = barWidget.getConfig("show_label") ~= false
-local showPressCount = barWidget.getConfig("show_press_count") ~= false
-local hideDisconnected = barWidget.getConfig("hide_disconnected") == true
+local label = noctalia.getConfig("label") or "Casio"
+local showLabel = noctalia.getConfig("show_label") ~= false
+local showPressCount = noctalia.getConfig("show_press_count") ~= false
+local hideDisconnected = noctalia.getConfig("hide_disconnected") == true
 
 local current = {
   connected = false,

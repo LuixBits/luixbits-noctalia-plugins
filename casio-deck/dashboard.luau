@@ -205,7 +205,7 @@ for id, preset in pairs(actionData.presets or {}) do
 end
 
 local function configString(key)
-  local value = desktopWidget.getConfig(key)
+  local value = noctalia.getConfig(key)
   if type(value) ~= "string" then
     return ""
   end
@@ -903,7 +903,7 @@ end
 local function aboutTab()
   local youtubeUrl = value(configString("youtube_channel_url"), "https://www.youtube.com/@LuixBits")
   local videoUrl = configString("explanation_video_url")
-  local githubUrl = "https://github.com/devluixos/luixbits-noctalia-plugins"
+  local githubUrl = "https://github.com/LuixBits/luixbits-noctalia-plugins"
 
   return ui.column({ gap = 7 }, {
     sectionTitle("About"),

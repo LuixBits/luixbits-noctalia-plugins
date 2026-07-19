@@ -8,7 +8,7 @@ protocol.
 ## V1 Output
 
 ```text
-ready casio-deck-helper 0.1.0 casio_abl100we_3565
+ready casio-deck-helper 0.1.1 casio_abl100we_3565
 model casio_abl100we_3565 Casio_ABL-100WE-1A module=3565 support=experimental
 capabilities casio_abl100we_3565 lower_right,finder,lower_left
 scan casio_abl100we_3565 CASIO_ABL-100WE-1A 00:11:22:33:44:55 experimental
@@ -133,7 +133,7 @@ noctalia msg plugin luixbits/casio-deck:bridge all error "test error"
 The experimental helper lives in:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/casio-deck/helper
+/path/to/luixbits-noctalia-plugins/casio-deck/helper
 ```
 
 That helper is the GShockTimeServer-style Bluetooth layer for this repo. The
@@ -141,22 +141,22 @@ Noctalia plugin does not import Bluetooth libraries directly; it starts a helper
 process, and the helper uses `gshock-api` plus `bleak` to connect to the watch
 and emit normalized protocol lines.
 
-Run it through the Nix-friendly wrapper:
+Run it through the bundled wrapper:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
 ```
 
 For ABL-100WE background listener testing, configure `helper_command` to:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2
 ```
 
 For the dashboard Pair button, configure `pair_command` to:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --app-info-profile smart-sync --sync-time-on-connect --once --debug --scan-timeout 90 --connect-timeout 25 --app-init-timeout 25
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --app-info-profile smart-sync --sync-time-on-connect --once --debug --scan-timeout 90 --connect-timeout 25 --app-init-timeout 25
 ```
 
 For ABL-100WE local testing, the configured Pair command adds
@@ -193,11 +193,11 @@ and waits again. Use `--session-mode poll` only for gshock-api polling research.
 Useful test commands:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --scan-only --debug
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2 --debug
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode action --app-info-profile smart-sync --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --debug
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode fixed --app-info-profile smart-sync --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --keepalive-interval 10 --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --scan-only --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2 --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode action --app-info-profile smart-sync --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode fixed --app-info-profile smart-sync --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --keepalive-interval 10 --debug
 ```
 
 The action helper mode uses the Casio protocol layer, completes app-info setup,
@@ -213,7 +213,7 @@ debounced `press <trigger>` lines.
 For pairing repair, use:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --repair-pairing --app-info-profile smart-sync --sync-time-on-connect --once --debug --scan-timeout 120 --connect-timeout 25 --app-init-timeout 25
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --repair-pairing --app-info-profile smart-sync --sync-time-on-connect --once --debug --scan-timeout 120 --connect-timeout 25 --app-init-timeout 25
 ```
 
 For normal Pair/Setup, omit `--repair-pairing` so an existing Linux bond is not

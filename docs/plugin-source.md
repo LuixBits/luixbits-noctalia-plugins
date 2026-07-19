@@ -22,22 +22,22 @@ Therefore `luixbits/casio-deck` lives in:
 casio-deck/
 ```
 
-When adding this source in the Noctalia UI, use:
+When adding a local clone in the Noctalia UI, use the repository root:
 
 ```text
-/home/luiz/projects/noctalia-plugins
+/path/to/luixbits-noctalia-plugins
 ```
 
-or the Git URL:
+You can also use the Git URL:
 
 ```text
-https://github.com/devluixos/luixbits-noctalia-plugins
+https://github.com/LuixBits/luixbits-noctalia-plugins
 ```
 
 Do not use:
 
 ```text
-/home/luiz/projects/noctalia-plugins/casio-deck
+/path/to/luixbits-noctalia-plugins/casio-deck
 ```
 
 That path points at the plugin directory, not the source root.

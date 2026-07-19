@@ -42,19 +42,19 @@ V1 includes:
 Repository:
 
 ```text
-git@github.com:devluixos/luixbits-noctalia-plugins.git
+git@github.com:LuixBits/luixbits-noctalia-plugins.git
 ```
 
 Local source root:
 
 ```text
-/home/luiz/projects/noctalia-plugins
+/path/to/luixbits-noctalia-plugins
 ```
 
 Plugin directory:
 
 ```text
-/home/luiz/projects/noctalia-plugins/casio-deck
+/path/to/luixbits-noctalia-plugins/casio-deck
 ```
 
 Noctalia plugin id:
@@ -64,8 +64,8 @@ luixbits/casio-deck
 ```
 
 Important: Noctalia plugin sources point at the source root, not the plugin
-directory. Use `/home/luiz/projects/noctalia-plugins`, not
-`/home/luiz/projects/noctalia-plugins/casio-deck`.
+directory. Use `/path/to/luixbits-noctalia-plugins`, not
+`/path/to/luixbits-noctalia-plugins/casio-deck`.
 
 ## Current Structure
 
@@ -396,17 +396,12 @@ In Noctalia Settings:
 2. Add source.
 3. Choose `Path`.
 4. Name: `local-dev`
-5. Location: `/home/luiz/projects/noctalia-plugins`
+5. Location: `/path/to/luixbits-noctalia-plugins`
 6. Enable `Casio Deck`.
 7. Add `luixbits/casio-deck:status` to the bar.
 
-In the NixOS/Home Manager setup, local testing is wired from:
-
-```text
-/home/luiz/luix_nix_config/home/modules/niri/noctalia/default.nix
-```
-
-That module points Noctalia at:
+In a NixOS/Home Manager setup, wire local testing from whichever module owns
+your Noctalia configuration. That module should point Noctalia at:
 
 ```text
 ${config.home.homeDirectory}/projects/noctalia-plugins
@@ -637,19 +632,19 @@ The Noctalia plugin should own desktop-facing state and UI.
 Local mock helper:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/casio-deck/helper/examples/mock-helper.sh
+/path/to/luixbits-noctalia-plugins/casio-deck/helper/examples/mock-helper.sh
 ```
 
 Invalid-line test:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/casio-deck/helper/examples/mock-helper.sh --invalid
+/path/to/luixbits-noctalia-plugins/casio-deck/helper/examples/mock-helper.sh --invalid
 ```
 
 ABL-style mock:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/casio-deck/helper/examples/mock-helper.sh --model abl100we
+/path/to/luixbits-noctalia-plugins/casio-deck/helper/examples/mock-helper.sh --model abl100we
 ```
 
 ## ABL-100WE Test Helper
@@ -657,13 +652,13 @@ ABL-style mock:
 The experimental helper is:
 
 ```text
-/home/luiz/projects/noctalia-plugins/casio-deck/helper
+/path/to/luixbits-noctalia-plugins/casio-deck/helper
 ```
 
 Run it through:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --once --debug
 ```
 
 The product goal is still button monitoring. On ABL-100WE, the confirmed path
@@ -676,14 +671,14 @@ Use `--loop` only for controlled research captures. For UI-driven safe testing,
 use the one-shot action path:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode action --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode action --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --debug
 ```
 
 Current watch test flow:
 
 1. Keep the phone app/Bluetooth away from the watch during PC tests.
 2. Prefer the capture runner:
-   `/home/luiz/projects/noctalia-plugins/scripts/dev/capture-abl100-session.sh --seconds 180`.
+   `/path/to/luixbits-noctalia-plugins/scripts/dev/capture-abl100-session.sh --seconds 180`.
    It records helper stdout/stderr and starts `btmon` when available.
 3. Prefer Noctalia-started helper mode through `helper_command`; use terminal
    `--loop --debug` only when collecting raw diagnostics.
@@ -716,7 +711,7 @@ If Linux says the watch is paired but the watch still stays in CNCT/search mode,
 run a deliberate repair pairing session:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --repair-pairing --sync-time-on-connect --once --debug --scan-timeout 120 --connect-timeout 25 --app-init-timeout 25
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --repair-pairing --sync-time-on-connect --once --debug --scan-timeout 120 --connect-timeout 25 --app-init-timeout 25
 ```
 
 This removes the saved BlueZ device, scans by watch name, pairs again, and then

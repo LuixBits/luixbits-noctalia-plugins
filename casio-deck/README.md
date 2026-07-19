@@ -1,7 +1,7 @@
 # Casio Deck
 
-Noctalia v5 plugin foundation for using a Casio watch as a stream-deck-like
-controller.
+Experimental Noctalia v5 plugin for using a Casio ABL-100WE watch as a
+stream-deck-like controller.
 
 V1 focuses on the Casio ABL-100WE-1A / module 3565, but the structure is
 model-adapter based so other Casio Bluetooth watches can be added later without
@@ -14,7 +14,7 @@ capabilities, presets, and custom trigger commands.
 ## Layout
 
 ```text
-/home/luiz/projects/noctalia-plugins/
+luixbits-noctalia-plugins/
   catalog.toml
   casio-deck/
     plugin.toml
@@ -36,7 +36,7 @@ capabilities, presets, and custom trigger commands.
 The Noctalia path source must point at the parent source root:
 
 ```text
-/home/luiz/projects/noctalia-plugins
+/path/to/luixbits-noctalia-plugins
 ```
 
 The plugin id `luixbits/casio-deck` maps to the `casio-deck` directory.
@@ -78,18 +78,18 @@ Most actions should be shell-command presets in `data/actions.deck`. The bridge
 executes only configured presets or configured shell command strings; helpers
 never send commands.
 
-## Local Noctalia Config
+## Noctalia Config
 
-For a normal local Noctalia setup, add a path source and enable the plugin:
+Add the cloned repository root as a path source and enable the plugin:
 
 ```toml
 [plugins]
 enabled = ["luixbits/casio-deck"]
 
 [[plugins.source]]
-name = "local-dev"
+name = "luixbits"
 kind = "path"
-location = "/home/luiz/projects/noctalia-plugins"
+location = "/path/to/luixbits-noctalia-plugins"
 auto_update = false
 ```
 
@@ -107,24 +107,32 @@ hide_disconnected = false
 start = ["launcher", "casio_deck", "wallpaper"]
 ```
 
-The bar widget is the main UI surface for now. Left-click is reserved for the
-future dropdown panel and currently reports that Noctalia v5 does not expose
-plugin-owned bar panels yet. Right-click reports bridge status, and middle-click
-sends a quick test trigger for the selected model.
-
-In this NixOS/Home Manager setup, the same wiring lives in
-`home/modules/niri/noctalia/default.nix`.
+The bar widget is the quick status surface in 0.1.1, while setup lives in the
+desktop widget. Left-click currently points users to that setup UI; a later
+release can migrate it to a plugin panel. Right-click reports bridge status, and
+middle-click sends a quick test trigger for the selected model.
 
 Plugin-level settings such as `watch_model`, `pair_command`, `helper_command`,
 and command mappings are edited from Settings -> Plugins -> Casio Deck -> gear.
-For normal ABL-100WE use, enable `autostart_helper` and run the helper in
-listener mode. The helper then stays alive in the background and waits for
-watch-initiated short action sessions.
+For normal ABL-100WE use, the command settings can stay empty. The bridge
+derives the bundled helper commands from the plugin source location when
+Noctalia loads the repository layout shown above. If the repository is moved
+and a saved absolute helper, pair, or stop command points to a file that no
+longer exists, the bridge automatically falls back to the bundled command.
 
-For ABL-100WE background listener testing, set `helper_command` to:
+Enable `autostart_helper` if you want the listener to start when Noctalia loads
+the plugin. Otherwise use the dashboard Listener button. The helper stays alive
+in the background and waits for watch-initiated short action sessions.
+Noctalia-launched helpers keep their Python environment under the writable
+plugin data directory. The first run downloads helper dependencies and may take
+a little longer; manually launched repository scripts default to
+`helper/.venv` unless `CASIO_DECK_HELPER_VENV` is set.
+
+Manual override for `helper_command`, if you are not using the bundled source
+layout:
 
 ```text
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --listener --app-info-profile smart-sync --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --reconnect-delay 2
 ```
 
 In this mode the helper is expected to sit in `listening` or `waiting`, handle a
@@ -132,18 +140,19 @@ short watch-initiated session, emit the decoded trigger to Noctalia, disconnect
 from that live BLE session, and return to listening. That is different from
 losing the saved BlueZ bond.
 
-For the Connection tab Pair button, set `pair_command` to:
+Manual override for the Connection tab `pair_command`, if needed:
 
 ```text
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --sync-time-on-connect --once --debug --scan-timeout 90 --connect-timeout 25 --app-init-timeout 25
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --setup-pairing --app-info-profile smart-sync --sync-time-on-connect --once --debug --scan-timeout 90 --connect-timeout 25 --app-init-timeout 25
 ```
 
 Use Pair first when setting up the watch. In normal local config Pair does not
 remove the existing Linux bond; Repair is the destructive remove-and-pair path.
-Pair also writes the minimal current-time packet because the proven
-GShockTimeServer transaction does that before disconnecting. After Pair
-succeeds, use Listener mode and trigger the watch from Timekeeping mode with
-short lower right, long lower right, or long lower left.
+If Listener is already active, Pair stops it, waits for Bluetooth to be released,
+runs setup, and restores Listener when setup finishes. Pair also writes the
+minimal current-time packet because the proven GShockTimeServer transaction does
+that before disconnecting. After Pair succeeds, trigger the watch from
+Timekeeping mode with short lower right, long lower right, or long lower left.
 
 On ABL-100WE/module 3565, Casio Deck currently cannot see every normal physical
 button click. The confirmed usable session triggers are short lower right,
@@ -193,6 +202,10 @@ Each trigger can use a preset or one configured shell command:
 - `finder_command`
 - `lower_left_preset`
 - `lower_left_command`
+
+All three triggers default to `notification_test`, so the first successful watch
+press is visible without changing the desktop. Change the presets after the
+helper is working.
 
 Presets include:
 
@@ -290,9 +303,15 @@ noctalia msg desktop-widgets-edit
 noctalia msg plugin luixbits/casio-deck:dashboard all press lower_right
 ```
 
-Current Noctalia may warn during `noctalia config validate` that plugin desktop
-widget types are unrecognized. Runtime still resolves the full
-`author/plugin:entry` type after plugin loading.
+The plugin targets Noctalia plugin API 3. After changing the manifest or an
+entry script, verify both plugin discovery and entry configuration:
+
+```sh
+noctalia plugins lint ./casio-deck
+noctalia config validate
+```
+
+Neither command should report `luixbits/casio-deck` as ignored or unrecognized.
 
 ## Helper Stream
 
@@ -300,7 +319,7 @@ The bridge can run an external helper with `helper_command`. The helper prints
 one normalized event per line:
 
 ```text
-ready casio-deck-helper 0.1.0 casio_abl100we_3565
+ready casio-deck-helper 0.1.1 casio_abl100we_3565
 model casio_abl100we_3565 Casio_ABL-100WE-1A module=3565 support=experimental
 capabilities casio_abl100we_3565 lower_right,finder,lower_left
 watch casio_abl100we_3565 CASIO_ABL-100WE-1A XX:XX:XX:XX:XX:XX
@@ -355,40 +374,40 @@ Or run the bundled capture session script, which records helper stdout/stderr
 and starts `btmon` when available:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/dev/capture-abl100-session.sh --seconds 180
+/path/to/luixbits-noctalia-plugins/scripts/dev/capture-abl100-session.sh --seconds 180
 ```
 
 Run the helper manually when you do not need a full capture bundle:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode action --once --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode action --once --debug
 ```
 
 Use experimental fixed mode only when investigating whether the watch can hold a
 full app-session link:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode fixed --once --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode fixed --once --debug
 ```
 
 Use the low-level raw probe only when investigating Bleak notifications without
 the Casio app-session handshake:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --loop --session-mode raw-probe --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --loop --session-mode raw-probe --debug
 ```
 
 Use the legacy connection-trigger fallback only when investigating the short
 watch-initiated session:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --loop --session-mode connection-trigger --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --loop --session-mode connection-trigger --debug
 ```
 
 Use experimental gshock-api polling only when investigating BLE behavior:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --loop --session-mode poll --debug
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --loop --session-mode poll --debug
 ```
 
 Then try the watch operations in action mode:
@@ -420,7 +439,7 @@ If the helper works and you want to test a held session, set `watch_model` to
 `casio_abl100we_3565` and `helper_command` to:
 
 ```text
-/home/luiz/projects/noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode fixed --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --keepalive-interval 10
+/path/to/luixbits-noctalia-plugins/scripts/helper/run-abl100-helper.sh --model abl100we --session-mode fixed --once --scan-timeout 60 --connect-timeout 25 --app-init-timeout 25 --keepalive-interval 10
 ```
 
 The helper owns hardware-specific Bluetooth, BLE, serial, evdev, GPIO,

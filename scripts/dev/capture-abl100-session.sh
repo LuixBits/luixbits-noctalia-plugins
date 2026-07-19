@@ -25,7 +25,7 @@ Examples:
   $0 --seconds 180
   $0 --no-btmon -- --poll-interval 1 --debug
   $0 --seconds 180 -- --session-mode connection-trigger --debug
-  $0 --address FC:51:1B:85:68:53
+  $0 --address 00:11:22:33:44:55
 EOF
 }
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,7 @@ from casio_deck_helper.adapters.abl100.app_info import (
     app_info_needs_write,
     app_info_response,
 )
+from casio_deck_helper.adapters.abl100.app_connection import scan_for_watch
 from casio_deck_helper.adapters.abl100.time_sync import current_time_command
 from casio_deck_helper.adapters.abl100.triggers import button_to_trigger
 from casio_deck_helper.cli import parse_args
@@ -105,6 +107,17 @@ class AppInfoTests(unittest.TestCase):
     def test_keep_profile_never_writes_app_info(self) -> None:
         self.assertFalse(app_info_needs_write(APP_INFO_BLANK, "keep"))
         self.assertEqual(app_info_response("keep"), "")
+
+
+class ScanTimeoutTests(unittest.IsolatedAsyncioTestCase):
+    async def test_app_scan_has_an_outer_deadline(self) -> None:
+        class HangingScanner:
+            async def scan(self, *, watch_filter: object) -> None:
+                del watch_filter
+                await asyncio.Event().wait()
+
+        with self.assertRaises(TimeoutError):
+            await scan_for_watch(HangingScanner(), object(), 0.01)
 
 
 class DebounceTests(unittest.TestCase):

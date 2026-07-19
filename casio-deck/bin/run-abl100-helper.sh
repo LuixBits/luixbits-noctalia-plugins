@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-helper_dir="$repo_root/casio-deck/helper"
+plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+helper_dir="$plugin_dir/helper"
 venv_dir="${CASIO_DECK_HELPER_VENV:-$helper_dir/.venv}"
 
 if command -v uv >/dev/null 2>&1; then

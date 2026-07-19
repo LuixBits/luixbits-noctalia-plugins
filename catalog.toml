@@ -3,10 +3,10 @@
 [[plugin]]
 id = "luixbits/casio-deck"
 name = "Casio Deck"
-version = "0.1.0"
+version = "0.1.1"
+plugin_api = 3
 author = "LuixBits"
 license = "MIT"
 icon = "device-watch"
-description = "Foundation for using a Casio watch as a stream-deck-like Noctalia controller."
-min_noctalia = "5.0.0"
+description = "Experimental Casio ABL-100WE controller for Noctalia on Wayland."
 tags = ["watch", "controller", "stream-deck", "casio"]

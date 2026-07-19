@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 script_roots=(
   "$repo_root/scripts"
+  "$repo_root/casio-deck/bin"
 )
 
 for script_root in "${script_roots[@]}"; do
@@ -145,6 +146,20 @@ for entry in plugins:
         raise SystemExit(f"duplicate catalog plugin id: {plugin_id}")
     seen.add(plugin_id)
 
+    catalog_plugin_api = entry.get("plugin_api")
+    if (
+        not isinstance(catalog_plugin_api, int)
+        or isinstance(catalog_plugin_api, bool)
+        or catalog_plugin_api < 1
+    ):
+        raise SystemExit(
+            f"{plugin_id} catalog plugin_api must be a positive integer"
+        )
+    if "min_noctalia" in entry:
+        raise SystemExit(
+            f"{plugin_id} catalog uses obsolete min_noctalia; use plugin_api"
+        )
+
     plugin_dir = root / plugin_id.split("/", 1)[1]
     manifest_path = plugin_dir / "plugin.toml"
     if not manifest_path.exists():
@@ -154,6 +169,25 @@ for entry in plugins:
     if manifest.get("id") != plugin_id:
         raise SystemExit(
             f"manifest id mismatch for {plugin_id}: {manifest.get('id')!r}"
+        )
+
+    manifest_plugin_api = manifest.get("plugin_api")
+    if (
+        not isinstance(manifest_plugin_api, int)
+        or isinstance(manifest_plugin_api, bool)
+        or manifest_plugin_api < 1
+    ):
+        raise SystemExit(
+            f"{plugin_id} manifest plugin_api must be a positive integer"
+        )
+    if manifest_plugin_api != catalog_plugin_api:
+        raise SystemExit(
+            f"{plugin_id} plugin_api mismatch: catalog={catalog_plugin_api}, "
+            f"manifest={manifest_plugin_api}"
+        )
+    if "min_noctalia" in manifest:
+        raise SystemExit(
+            f"{plugin_id} manifest uses obsolete min_noctalia; use plugin_api"
         )
 
     for kind in ENTRY_KINDS:
@@ -203,10 +237,46 @@ for entry in plugins:
 
     required_keys = []
     for setting in iter_settings(manifest):
+        setting_key = setting.get("key", "<missing>")
+        if "label" in setting or "description" in setting:
+            raise SystemExit(
+                f"{plugin_id} setting {setting_key!r} uses literal label/description; "
+                "use label_key/description_key"
+            )
+        if not setting.get("label_key"):
+            raise SystemExit(
+                f"{plugin_id} setting {setting_key!r} is missing label_key"
+            )
+
         for field in ("label_key", "description_key"):
             value = setting.get(field)
             if value:
                 required_keys.append(value)
+
+        if setting.get("type") == "select":
+            options = setting.get("options", [])
+            option_values = []
+            for option in options:
+                value = option.get("value")
+                label_key = option.get("label_key")
+                if not value:
+                    raise SystemExit(
+                        f"{plugin_id} select setting {setting_key!r} has an option "
+                        "without a value"
+                    )
+                if "label" in option or not label_key:
+                    raise SystemExit(
+                        f"{plugin_id} select setting {setting_key!r} option "
+                        f"{value!r} must use label_key"
+                    )
+                option_values.append(value)
+                required_keys.append(label_key)
+
+            if setting.get("default") not in option_values:
+                raise SystemExit(
+                    f"{plugin_id} select setting {setting_key!r} default "
+                    f"{setting.get('default')!r} is not one of its options"
+                )
 
     if required_keys:
         english = translations.get("en")
@@ -221,7 +291,7 @@ for entry in plugins:
         key = setting.get("key", "")
         if key.endswith("_preset") and setting.get("type") == "select":
             options = tuple(
-                (option.get("value", ""), option.get("label", ""))
+                (option.get("value", ""), option.get("label_key", ""))
                 for option in setting.get("options", [])
             )
             preset_selects.append((key, options))

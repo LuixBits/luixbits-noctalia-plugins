@@ -1,12 +1,12 @@
 id = "luixbits/casio-deck"
 name = "Casio Deck"
-version = "0.1.0"
-min_noctalia = "5.0.0"
+version = "0.1.1"
+plugin_api = 3
 author = "LuixBits"
 license = "MIT"
 tags = ["watch", "controller", "stream-deck", "casio"]
 icon = "device-watch"
-description = "Foundation for using a Casio watch as a stream-deck-like Noctalia controller."
+description = "Experimental Casio ABL-100WE controller for Noctalia on Wayland."
 
 [[setting]]
 key = "notify_on_press"
@@ -54,7 +54,7 @@ label_key = "settings.watch_model.label"
 description_key = "settings.watch_model.description"
 default = "casio_abl100we_3565"
 options = [
-  { value = "casio_abl100we_3565", label = "Casio ABL-100WE (module 3565)" },
+  { value = "casio_abl100we_3565", label_key = "settings.watch_model.options.casio_abl100we_3565" },
 ]
 
 [[setting]]
@@ -100,24 +100,24 @@ key = "lower_left_preset"
 type = "select"
 label_key = "settings.lower_left_preset.label"
 description_key = "settings.lower_left_preset.description"
-default = "lock"
+default = "notification_test"
 options = [
-  { value = "none", label = "Do nothing" },
-  { value = "notification_test", label = "Notification test" },
-  { value = "media_play_pause", label = "Media play-pause" },
-  { value = "volume_up", label = "Volume up" },
-  { value = "volume_down", label = "Volume down" },
-  { value = "screenshot_region", label = "Screenshot region" },
-  { value = "clipboard", label = "Clipboard" },
-  { value = "launcher", label = "Launcher" },
-  { value = "lock", label = "Lock screen" },
-  { value = "audio_mute_toggle", label = "Toggle output mute" },
-  { value = "mic_mute_toggle", label = "Toggle microphone mute" },
-  { value = "teams_accept_audio", label = "Teams accept audio call" },
-  { value = "teams_accept_video", label = "Teams accept video call" },
-  { value = "teams_toggle_mute", label = "Teams toggle mute" },
-  { value = "teams_decline_call", label = "Teams decline call" },
-  { value = "teams_leave_call", label = "Teams leave call" },
+  { value = "none", label_key = "settings.preset_options.none" },
+  { value = "notification_test", label_key = "settings.preset_options.notification_test" },
+  { value = "media_play_pause", label_key = "settings.preset_options.media_play_pause" },
+  { value = "volume_up", label_key = "settings.preset_options.volume_up" },
+  { value = "volume_down", label_key = "settings.preset_options.volume_down" },
+  { value = "screenshot_region", label_key = "settings.preset_options.screenshot_region" },
+  { value = "clipboard", label_key = "settings.preset_options.clipboard" },
+  { value = "launcher", label_key = "settings.preset_options.launcher" },
+  { value = "lock", label_key = "settings.preset_options.lock" },
+  { value = "audio_mute_toggle", label_key = "settings.preset_options.audio_mute_toggle" },
+  { value = "mic_mute_toggle", label_key = "settings.preset_options.mic_mute_toggle" },
+  { value = "teams_accept_audio", label_key = "settings.preset_options.teams_accept_audio" },
+  { value = "teams_accept_video", label_key = "settings.preset_options.teams_accept_video" },
+  { value = "teams_toggle_mute", label_key = "settings.preset_options.teams_toggle_mute" },
+  { value = "teams_decline_call", label_key = "settings.preset_options.teams_decline_call" },
+  { value = "teams_leave_call", label_key = "settings.preset_options.teams_leave_call" },
 ]
 
 [[setting]]
@@ -132,24 +132,24 @@ key = "lower_right_preset"
 type = "select"
 label_key = "settings.lower_right_preset.label"
 description_key = "settings.lower_right_preset.description"
-default = "teams_accept_audio"
+default = "notification_test"
 options = [
-  { value = "none", label = "Do nothing" },
-  { value = "notification_test", label = "Notification test" },
-  { value = "media_play_pause", label = "Media play-pause" },
-  { value = "volume_up", label = "Volume up" },
-  { value = "volume_down", label = "Volume down" },
-  { value = "screenshot_region", label = "Screenshot region" },
-  { value = "clipboard", label = "Clipboard" },
-  { value = "launcher", label = "Launcher" },
-  { value = "lock", label = "Lock screen" },
-  { value = "audio_mute_toggle", label = "Toggle output mute" },
-  { value = "mic_mute_toggle", label = "Toggle microphone mute" },
-  { value = "teams_accept_audio", label = "Teams accept audio call" },
-  { value = "teams_accept_video", label = "Teams accept video call" },
-  { value = "teams_toggle_mute", label = "Teams toggle mute" },
-  { value = "teams_decline_call", label = "Teams decline call" },
-  { value = "teams_leave_call", label = "Teams leave call" },
+  { value = "none", label_key = "settings.preset_options.none" },
+  { value = "notification_test", label_key = "settings.preset_options.notification_test" },
+  { value = "media_play_pause", label_key = "settings.preset_options.media_play_pause" },
+  { value = "volume_up", label_key = "settings.preset_options.volume_up" },
+  { value = "volume_down", label_key = "settings.preset_options.volume_down" },
+  { value = "screenshot_region", label_key = "settings.preset_options.screenshot_region" },
+  { value = "clipboard", label_key = "settings.preset_options.clipboard" },
+  { value = "launcher", label_key = "settings.preset_options.launcher" },
+  { value = "lock", label_key = "settings.preset_options.lock" },
+  { value = "audio_mute_toggle", label_key = "settings.preset_options.audio_mute_toggle" },
+  { value = "mic_mute_toggle", label_key = "settings.preset_options.mic_mute_toggle" },
+  { value = "teams_accept_audio", label_key = "settings.preset_options.teams_accept_audio" },
+  { value = "teams_accept_video", label_key = "settings.preset_options.teams_accept_video" },
+  { value = "teams_toggle_mute", label_key = "settings.preset_options.teams_toggle_mute" },
+  { value = "teams_decline_call", label_key = "settings.preset_options.teams_decline_call" },
+  { value = "teams_leave_call", label_key = "settings.preset_options.teams_leave_call" },
 ]
 
 [[setting]]
@@ -164,24 +164,24 @@ key = "finder_preset"
 type = "select"
 label_key = "settings.finder_preset.label"
 description_key = "settings.finder_preset.description"
-default = "audio_mute_toggle"
+default = "notification_test"
 options = [
-  { value = "none", label = "Do nothing" },
-  { value = "notification_test", label = "Notification test" },
-  { value = "media_play_pause", label = "Media play-pause" },
-  { value = "volume_up", label = "Volume up" },
-  { value = "volume_down", label = "Volume down" },
-  { value = "screenshot_region", label = "Screenshot region" },
-  { value = "clipboard", label = "Clipboard" },
-  { value = "launcher", label = "Launcher" },
-  { value = "lock", label = "Lock screen" },
-  { value = "audio_mute_toggle", label = "Toggle output mute" },
-  { value = "mic_mute_toggle", label = "Toggle microphone mute" },
-  { value = "teams_accept_audio", label = "Teams accept audio call" },
-  { value = "teams_accept_video", label = "Teams accept video call" },
-  { value = "teams_toggle_mute", label = "Teams toggle mute" },
-  { value = "teams_decline_call", label = "Teams decline call" },
-  { value = "teams_leave_call", label = "Teams leave call" },
+  { value = "none", label_key = "settings.preset_options.none" },
+  { value = "notification_test", label_key = "settings.preset_options.notification_test" },
+  { value = "media_play_pause", label_key = "settings.preset_options.media_play_pause" },
+  { value = "volume_up", label_key = "settings.preset_options.volume_up" },
+  { value = "volume_down", label_key = "settings.preset_options.volume_down" },
+  { value = "screenshot_region", label_key = "settings.preset_options.screenshot_region" },
+  { value = "clipboard", label_key = "settings.preset_options.clipboard" },
+  { value = "launcher", label_key = "settings.preset_options.launcher" },
+  { value = "lock", label_key = "settings.preset_options.lock" },
+  { value = "audio_mute_toggle", label_key = "settings.preset_options.audio_mute_toggle" },
+  { value = "mic_mute_toggle", label_key = "settings.preset_options.mic_mute_toggle" },
+  { value = "teams_accept_audio", label_key = "settings.preset_options.teams_accept_audio" },
+  { value = "teams_accept_video", label_key = "settings.preset_options.teams_accept_video" },
+  { value = "teams_toggle_mute", label_key = "settings.preset_options.teams_toggle_mute" },
+  { value = "teams_decline_call", label_key = "settings.preset_options.teams_decline_call" },
+  { value = "teams_leave_call", label_key = "settings.preset_options.teams_leave_call" },
 ]
 
 [[setting]]
@@ -202,29 +202,29 @@ entry = "entries/widgets/status.luau"
   [[widget.setting]]
   key = "label"
   type = "string"
-  label = "Label"
-  description = "Text shown next to the watch glyph in the bar."
+  label_key = "settings.widget.label.label"
+  description_key = "settings.widget.label.description"
   default = "Casio"
 
   [[widget.setting]]
   key = "show_label"
   type = "bool"
-  label = "Show label"
-  description = "Show text next to the watch glyph."
+  label_key = "settings.widget.show_label.label"
+  description_key = "settings.widget.show_label.description"
   default = true
 
   [[widget.setting]]
   key = "show_press_count"
   type = "bool"
-  label = "Show press count"
-  description = "Append the number of received button presses to the bar label."
+  label_key = "settings.widget.show_press_count.label"
+  description_key = "settings.widget.show_press_count.description"
   default = true
 
   [[widget.setting]]
   key = "hide_disconnected"
   type = "bool"
-  label = "Hide while disconnected"
-  description = "Hide the bar widget until the bridge reports a connected watch."
+  label_key = "settings.widget.hide_disconnected.label"
+  description_key = "settings.widget.hide_disconnected.description"
   default = false
 
 [[shortcut]]

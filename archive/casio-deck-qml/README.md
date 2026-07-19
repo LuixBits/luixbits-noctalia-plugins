@@ -17,11 +17,11 @@ The active plugin lives in `../../casio-deck/` and uses `plugin.toml`,
 Install locally with:
 
 ```sh
-/home/luiz/projects/noctalia-plugins/archive/casio-deck-qml/install-qml-casio-deck.sh
+/path/to/luixbits-noctalia-plugins/archive/casio-deck-qml/install-qml-casio-deck.sh
 ```
 
 That creates this symlink:
 
 ```text
-/home/luiz/.config/noctalia/plugins/casio-deck -> /home/luiz/projects/noctalia-plugins/archive/casio-deck-qml
+~/.config/noctalia/plugins/casio-deck -> /path/to/luixbits-noctalia-plugins/archive/casio-deck-qml
 ```

@@ -27,6 +27,6 @@ preset|teams_leave_call|label=Teams leave call|short_label=Teams leave|command=w
 
 trigger_order|lower_right,finder,lower_left
 
-trigger|lower_left|label=Long lower left|test_label=Long lower left|support=lock screen default|command=lower_left_command|preset=lower_left_preset|on_click=pressLowerLeft
-trigger|lower_right|label=Short lower right|test_label=Short lower right|support=accept Teams call default|command=lower_right_command|preset=lower_right_preset|on_click=pressLowerRight
-trigger|finder|label=Long lower right|test_label=Long lower right|support=audio mute default|command=finder_command|preset=finder_preset|on_click=pressFinder
+trigger|lower_left|label=Long lower left|test_label=Long lower left|support=notification default|command=lower_left_command|preset=lower_left_preset|on_click=pressLowerLeft
+trigger|lower_right|label=Short lower right|test_label=Short lower right|support=notification default|command=lower_right_command|preset=lower_right_preset|on_click=pressLowerRight
+trigger|finder|label=Long lower right|test_label=Long lower right|support=notification default|command=finder_command|preset=finder_preset|on_click=pressFinder
